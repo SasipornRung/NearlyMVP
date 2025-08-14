@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PropDecoded • PoC</title>
+
+  <!-- Leaflet (แผนที่) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <style>
+    :root{
+      --green:#2E7D5B; --green-100:#E9F6F0; --green-300:#BFE3D2;
+      --teal:#1F6F63; --yellow:#F5E29E; --ink:#12333A; --muted:#6A7D80;
+      --card:#ffffff; --shadow:0 8px 24px rgba(0,0,0,.08); --radius:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Thai","Prompt",Arial,sans-serif;
+      background:linear-gradient(180deg,var(--green-100),#F7FAF9);
+      color:var(--ink)
+    }
+    .container{max-width:1120px;margin:0 auto;padding:16px 20px 80px}
+    .header{display:flex;align-items:center;gap:12px;padding:6px 0 10px;font-weight:800}
+    .logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--green),var(--teal));display:grid;place-items:center;color:#fff;box-shadow:var(--shadow)}
+    h1{margin:8px 0 12px}
+
+    /* เมนูด่วน */
+    .quick-grid{display:grid;gap:14px;grid-template-columns:1fr 1fr}
+    @media(min-width:900px){.quick-grid{grid-template-columns:repeat(4,1fr)}}
+    .qcard{background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:18px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;border:none}
+    .qicon{width:36px;height:36px;border-radius:10px;background:var(--green-300);display:grid;place-items:center;font-weight:900;color:var(--teal)}
+    .qtitle{font-weight:800}
+    .hint{color:var(--muted);font-size:13px;margin-top:2px}
+
+    /* เลนส์ */
+    .lens-bar{margin:18px 0 12px;display:flex;gap:8px;flex-wrap:wrap}
+    .seg{border:2px solid var(--green);border-radius:999px;padding:4px;display:inline-flex;gap:6px;background:#fff;box-shadow:var(--shadow)}
+    .seg button{all:unset;padding:8px 14px;border-radius:999px;color:var(--green);font-weight:700;cursor:pointer}
+    .seg button.active{background:linear-gradient(180deg,var(--green-300),#fff);color:var(--ink);box-shadow:inset 0 0 0 2px rgba(255,255,255,.6)}
+
+    /* เนื้อหา 2 คอลัมน์ */
+    .main{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;align-items:start}
+    @media(max-width:920px){.main{grid-template-columns:1fr}}
+
+    /* แผนที่ */
+    #map{height:56vh;min-height:320px;border-radius:16px;box-shadow:var(--shadow);}
+
+    /* การ์ด insight */
+    .insight{background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:16px 16px 10px}
+    .badge{display:inline-block;background:var(--green-300);color:var(--teal);padding:6px 10px;border-radius:999px;font-weight:700;font-size:13px;margin-right:6px}
+    .meter{height:10px;background:#ECF2F3;border-radius:999px;overflow:hidden}
+    .meter>span{display:block;height:100%;background:linear-gradient(90deg,#CFEBDD,var(--yellow));width:40%}
+    .kpi{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+    .kpi .card{background:#fff;border:1.5px solid #E5EFE9;border-radius:14px;padding:12px}
+    .kpi h4{margin:0 0 6px}
+    .muted{color:var(--muted)}
+    .btn{display:inline-flex;align-items:center;gap:8px;background:var(--green);color:#fff;border:none;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:800}
+    details{background:#FAFCFB;border:1.5px solid #E5EFE9;border-radius:12px;padding:10px 12px;margin:6px 0}
+    summary{cursor:pointer;font-weight:700}
+
+    /* === Range bar (สำหรับเลนส์ Developer) === */
+    .rent-range-wrap{font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Thai","Prompt",sans-serif; margin:10px 0}
+    .rent-range-title{margin-bottom:6px; color:#12333A; font-weight:700}
+    .rent-range-bar{
+      position:relative; height:28px; border-radius:14px; overflow:hidden;
+      background:linear-gradient(90deg,#2E7D5B 0%, #F5E29E 50%, #d44a54 100%); /* เขียว→เหลือง→แดง */
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);
+    }
+    .rent-range-frame{position:absolute; inset:0; border:2px solid #fff; border-radius:14px; pointer-events:none}
+    .rent-range-labels{display:flex; justify-content:space-between; color:#6A7D80; font-size:12px; margin-top:4px}
+    .rent-range-marker{
+      position:absolute; top:50%; transform:translate(-50%,-50%);
+      width:12px; height:12px; border-radius:50%; background:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.15);
+    }
+    .rent-range-tag{
+      position:absolute; transform:translate(-50%,8px);
+      background:#eef2ff; color:#1e40af; font-size:12px; padding:3px 8px; border-radius:999px; white-space:nowrap
+    }
+    .rent-range-note{font-size:12px; color:#6A7D80; margin-top:4px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="logo">PD</div> PropDecoded
+    </header>
+
+    <h1>ยินดีต้อนรับ</h1>
+
+    <!-- เมนูด่วน 4 ปุ่ม -->
+    <section class="quick-grid" aria-label="เมนูด่วน">
+      <button class="qcard" data-action="get-started">
+        <div class="qicon">➤</div>
+        <div><div class="qtitle">เริ่มต้นใช้งาน</div><div class="hint">เลือกเลนส์แล้วเริ่มสำรวจ</div></div>
+      </button>
+      <button class="qcard" data-action="insights">
+        <div class="qicon">⌁</div>
+        <div><div class="qtitle">บทวิเคราะห์</div><div class="hint">อ่าน insight ที่คัดสรร</div></div>
+      </button>
+      <button class="qcard" data-action="legal">
+        <div class="qicon">§</div>
+        <div><div class="qtitle">ข้อกฎหมายที่ควรทราบ</div><div class="hint">ข้อมูลกลางเพื่อประกอบความเข้าใจ</div></div>
+      </button>
+      <button class="qcard" data-action="contact">
+        <div class="qicon">☎</div>
+        <div><div class="qtitle">ติดต่อเรา</div><div class="hint">อีเมลถึงทีมงาน</div></div>
+      </button>
+    </section>
+
+    <!-- สวิทช์ 3 เลนส์ -->
+    <section class="lens-bar">
+      <div class="seg" role="tablist" aria-label="มุมมองข้อมูล">
+        <button class="active" id="lens-tenant"   role="tab" aria-selected="true">ผู้เช่า</button>
+        <button id="lens-investor"  role="tab" aria-selected="false">นักลงทุน</button>
+        <button id="lens-renovator" role="tab" aria-selected="false">รีโนเวท/ดีเวลอป</button>
+      </div>
+    </section>
+
+    <!-- เนื้อหาหลัก -->
+    <section class="main">
+      <div id="map" aria-label="แผนที่"></div>
+
+      <aside class="insight">
+        <span class="badge" id="lensTag">ผู้เช่า</span>
+        <h3 id="areaTitle">วัฒนา</h3>
+        <div class="muted" id="subtitle">ภาพรวมสำหรับผู้อยู่อาศัย</div>
+
+        <div style="margin:12px 0 6px;font-weight:800">ตัวชี้วัดหลัก</div>
+        <div class="meter"><span id="meterFill" style="width:60%"></span></div>
+
+        <div class="kpi">
+          <div class="card"><h4>ข้อมูลย่อ</h4><div class="muted" id="kpiLeftDesc">CBD ~ 18 นาที • BTS ~ 6 นาที</div></div>
+          <div class="card"><h4 id="kpiRightTitle">รีวิวล่าสุด</h4><div class="muted" id="kpiRightDesc">“ย่านเงียบช่วงกลางคืน มีร้านสะดวกซื้อใกล้ ๆ”</div></div>
+        </div>
+
+        <details open><summary>รายละเอียด</summary>
+          <p class="muted" id="detailsText">• ตัวอย่างข้อความรายละเอียดจากไฟล์ JSON</p>
+        </details>
+
+        <!-- === แถบช่วง (โชว์เฉพาะเลนส์ Developer) === -->
+        <section id="devBench" hidden style="margin-top:10px">
+          <div class="badge">Developer Benchmarks</div>
+
+          <h4 style="margin:8px 0 6px">ช่วงราคาตลาด (ยูนิตใกล้เคียง)</h4>
+          <div id="devMarketBar" class="rent-range"
+              data-min="18000" data-max="20000" data-actual="19000"
+              data-title="ช่วงราคาตลาด" data-unit="บาท/เดือน"></div>
+
+          <h4 style="margin:14px 0 6px">ช่วงแนะนำ (สำหรับเจ้าของ/ดีเวลอปเปอร์)</h4>
+          <div id="devOwnerBar" class="rent-range"
+              data-min="18500" data-max="20500" data-actual="19800"
+              data-title="ช่วงแนะนำ (Developer)" data-unit="บาท/เดือน"></div>
+        </section>
+        <!-- /แถบช่วง -->
+
+        <button class="btn" id="seeMore">ดูรายละเอียดเชิงลึก</button>
+      </aside>
+    </section>
+  </div>
+
+  <script>
+    // ---------- Map ----------
+    const map = L.map('map').setView([13.736717, 100.523186], 13); // BKK
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+    // จุดตัวอย่าง
+    const pts = [
+      [13.7307,100.5402,'Condo A'], [13.7425,100.5167,'Condo B'], [13.7253,100.5101,'Condo C']
+    ];
+    pts.forEach(([lat,lng,label]) => L.marker([lat,lng]).addTo(map).bindPopup(label));
+
+    // ---------- Load JSON (มี cache-bust) ----------
+    async function loadLens(lens){
+      const v = 'v=' + Date.now();
+      const url = `${lens}.json?${v}`;
+      const res = await fetch(url, {cache:'no-store'});
+      if(!res.ok) throw new Error('load json error');
+      return res.json();
+    }
+
+    // ---------- Elements ----------
+    const lensBtns = {
+      tenant:   document.getElementById('lens-tenant'),
+      investor: document.getElementById('lens-investor'),
+      renovator:document.getElementById('lens-renovator')
+    };
+    const lensTag       = document.getElementById('lensTag');
+    const subtitle      = document.getElementById('subtitle');
+    const meterFill     = document.getElementById('meterFill');
+    const kpiLeftDesc   = document.getElementById('kpiLeftDesc');
+    const kpiRightTitle = document.getElementById('kpiRightTitle');
+    const kpiRightDesc  = document.getElementById('kpiRightDesc');
+    const detailsText   = document.getElementById('detailsText');
+
+    // ---------- Renderer: Range bar ----------
+    function fmt(n){return Number(n).toLocaleString('th-TH',{maximumFractionDigits:0})}
+    function clamp(x,a,b){return Math.max(a, Math.min(b, x))}
+    function renderRentRange(el){
+      const min = Number(el.dataset.min), max = Number(el.dataset.max);
+      let actual = Number(el.dataset.actual);

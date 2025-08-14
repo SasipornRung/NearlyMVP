@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PropDecoded • PoC</title>
 
-  <!-- Leaflet (แผนที่) -->
+  <!-- Leaflet -->
   <link rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
@@ -13,14 +13,14 @@
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-  <!-- Chart.js (ใช้วาดพอร์ตนักลงทุน) -->
+  <!-- Chart.js (เผื่อโหลดทัน) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
   <style>
     :root{
       --green:#2E7D5B; --green-100:#E9F6F0; --green-300:#BFE3D2;
       --teal:#1F6F63; --yellow:#F5E29E; --ink:#12333A; --muted:#6A7D80;
-      --card:#ffffff; --shadow:0 8px 24px rgba(0,0,0,.08); --radius:16px;
+      --card:#ffffff; --shadow:0 8px 24px rgba(0,0,0,.08);
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -35,41 +35,36 @@
     .logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--green),var(--teal));display:grid;place-items:center;color:#fff;box-shadow:var(--shadow)}
     h1{margin:8px 0 12px}
 
-    /* เมนูด่วน */
     .quick-grid{display:grid;gap:14px;grid-template-columns:1fr 1fr}
     @media(min-width:900px){.quick-grid{grid-template-columns:repeat(4,1fr)}}
     .qcard{background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:18px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;border:none}
-    .qicon{width:36px;height:36px;border-radius:10px;background:var(--green-300);display:grid;place-items:center;font-weight:900;color:var(--teal)}
+    .qicon{width:36px;height:36px;border-radius:10px;background:var(--green-300);display:grid;place-items:center;font-weight:900;color:#1F6F63}
     .qtitle{font-weight:800}
     .hint{color:var(--muted);font-size:13px;margin-top:2px}
 
-    /* เลนส์ */
     .lens-bar{margin:18px 0 12px;display:flex;gap:8px;flex-wrap:wrap}
     .seg{border:2px solid var(--green);border-radius:999px;padding:4px;display:inline-flex;gap:6px;background:#fff;box-shadow:var(--shadow)}
     .seg button{all:unset;padding:8px 14px;border-radius:999px;color:var(--green);font-weight:700;cursor:pointer}
-    .seg button.active{background:linear-gradient(180deg,var(--green-300),#fff);color:var(--ink);box-shadow:inset 0 0 0 2px rgba(255,255,255,.6)}
+    .seg button.active{background:linear-gradient(180deg,#D6EFE3,#fff);color:var(--ink);box-shadow:inset 0 0 0 2px rgba(255,255,255,.6)}
 
-    /* เนื้อหา 2 คอลัมน์ */
     .main{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;align-items:start}
     @media(max-width:920px){.main{grid-template-columns:1fr}}
 
-    /* แผนที่ */
-    #map{height:56vh;min-height:320px;border-radius:16px;box-shadow:var(--shadow);}
+    #map{height:56vh;min-height:320px;border-radius:16px;box-shadow:var(--shadow)}
 
-    /* การ์ด insight */
     .insight{background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:16px 16px 10px}
-    .badge{display:inline-block;background:var(--green-300);color:var(--teal);padding:6px 10px;border-radius:999px;font-weight:700;font-size:13px;margin-right:6px}
+    .badge{display:inline-block;background:#BFE3D2;color:#1F6F63;padding:6px 10px;border-radius:999px;font-weight:700;font-size:13px;margin-right:6px}
     .meter{height:10px;background:#ECF2F3;border-radius:999px;overflow:hidden}
-    .meter>span{display:block;height:100%;background:linear-gradient(90deg,#CFEBDD,var(--yellow));width:40%}
+    .meter>span{display:block;height:100%;background:linear-gradient(90deg,#CFEBDD,#F5E29E);width:40%}
     .kpi{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
     .kpi .card{background:#fff;border:1.5px solid #E5EFE9;border-radius:14px;padding:12px}
     .kpi h4{margin:0 0 6px}
-    .muted{color:var(--muted)}
-    .btn{display:inline-flex;align-items:center;gap:8px;background:var(--green);color:#fff;border:none;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:800}
+    .muted{color:#6A7D80}
+    .btn{display:inline-flex;align-items:center;gap:8px;background:#2E7D5B;color:#fff;border:none;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:800}
     details{background:#FAFCFB;border:1.5px solid #E5EFE9;border-radius:12px;padding:10px 12px;margin:6px 0}
     summary{cursor:pointer;font-weight:700}
 
-    /* === Range bar (สำหรับเลนส์ Developer) === */
+    /* --- Range bar (Developer) --- */
     .rent-range-wrap{font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Thai","Prompt",sans-serif; margin:10px 0}
     .rent-range-title{margin-bottom:6px; color:#12333A; font-weight:700}
     .rent-range-bar{
@@ -80,14 +75,14 @@
     .rent-range-frame{position:absolute; inset:0; border:2px solid #fff; border-radius:14px; pointer-events:none}
     .rent-range-labels{display:flex; justify-content:space-between; color:#6A7D80; font-size:12px; margin-top:4px}
     .rent-range-marker{
-      position:absolute; top:50%; transform:translate(-50%,-50%);
+      position:absolute; top:50%; transform:translate(-50%, -50%);
       width:12px; height:12px; border-radius:50%; background:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.15);
     }
     .rent-range-tag{
-      position:absolute; transform:translate(-50%,8px);
-      background:#eef2ff; color:#1e40af; font-size:12px; padding:3px 8px; border-radius:999px; white-space:nowrap
+      position:absolute; transform:translate(-50%, 8px);
+      background:#eef2ff; color:#1e40af; font-size:12px; padding:3px 8px; border-radius:999px; white-space:nowrap;
     }
-    .rent-range-note{font-size:12px; color:#6A7D80; margin-top:4px)
+    .rent-range-note{font-size:12px; color:#6A7D80; margin-top:4px}
 
     /* layout ของส่วนพอร์ตนักลงทุน */
     .inv-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:center}
@@ -151,14 +146,14 @@
           <p class="muted" id="detailsText">• ตัวอย่างข้อความรายละเอียดจากไฟล์ JSON</p>
         </details>
 
-        <!-- === Developer Benchmarks (เฉพาะเลนส์รีโนเวท/ดีเวลอป) === -->
+        <!-- Developer Benchmarks -->
         <section id="devBench" hidden style="margin-top:10px">
           <div class="badge">Developer Benchmarks</div>
           <div id="devMarketMount"></div>
           <div id="devOwnerMount" style="margin-top:12px"></div>
         </section>
 
-        <!-- === Investor Portfolio (เฉพาะเลนส์นักลงทุน) === -->
+        <!-- Investor Portfolio -->
         <section id="investorViz" hidden style="margin-top:12px">
           <div class="badge">Investor Portfolio</div>
           <div class="inv-grid">
@@ -171,7 +166,7 @@
             </div>
           </div>
           <div class="muted" id="lossNote" style="margin-top:6px;display:none">
-            * หมายเหตุ: ห้องที่ขาดทุนจะแสดงสัดส่วนเป็นศูนย์ในกราฟ และถูกคิดรวมในกำไรสุทธิ
+            * หมายเหตุ: ห้องที่ขาดทุนจะแสดงสัดส่วนเป็นศูนย์ในกราฟ แต่ถูกคิดรวมในกำไรสุทธิ
           </div>
         </section>
 
@@ -181,9 +176,8 @@
   </div>
 
   <script>
-  // รันหลังหน้าโหลดเสร็จ (ให้แน่ใจว่า Leaflet/Chart.js พร้อม)
+  // ให้ทุกอย่างรันหลังหน้าโหลดเสร็จ
   window.addEventListener('load', () => {
-
     /* ---------- Map ---------- */
     const map = L.map('map').setView([13.736717, 100.523186], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -192,7 +186,7 @@
     [[13.7307,100.5402,'Condo A'], [13.7425,100.5167,'Condo B'], [13.7253,100.5101,'Condo C']]
       .forEach(([lat,lng,label]) => L.marker([lat,lng]).addTo(map).bindPopup(label));
 
-    /* ---------- Load JSON (กันแคช + ชี้ไป root เดียวกัน) ---------- */
+    /* ---------- Load JSON (กันแคช) ---------- */
     async function loadLens(lens){
       const url = `./${lens}.json?v=${Date.now()}`;
       const res = await fetch(url, {cache:'no-store'});
@@ -201,7 +195,7 @@
     }
 
     /* ---------- Elements ---------- */
-   const lensBtns = {
+    const lensBtns = {
       tenant:   document.getElementById('lens-tenant'),
       investor: document.getElementById('lens-investor'),
       renovator:document.getElementById('lens-renovator')
@@ -214,9 +208,11 @@
     const kpiRightDesc  = document.getElementById('kpiRightDesc');
     const detailsText   = document.getElementById('detailsText');
 
-    /* ---------- Renderer: Range bar (Developer) ---------- */
-    function fmt(n){return Number(n).toLocaleString('th-TH',{maximumFractionDigits:0})}
-    function clamp(x,a,b){return Math.max(a, Math.min(b, x))}
+    /* ---------- Helpers ---------- */
+    const fmt = n => Number(n).toLocaleString('th-TH',{maximumFractionDigits:0});
+    const clamp = (x,a,b) => Math.max(a, Math.min(b, x));
+
+    /* ---------- Range bar (Developer) ---------- */
     function renderRentRange(mount, data){
       mount.innerHTML = '';
       if(!data || !(data.min>0) || !(data.max>data.min)) return;
@@ -252,33 +248,55 @@
       position(); window.addEventListener('resize', position);
     }
 
-    /* ---------- Investor pie chart ---------- */
+    /* ---------- Investor pie (robust) ---------- */
     let profitChart = null;
-    function pct(n){ return (Number(n||0)*100).toFixed(1)+'%'; }
-    function renderInvestorViz(data){
-      const wrap = document.getElementById('investorViz');
-      const ctx  = document.getElementById('profitPie').getContext('2d');
+    const pct = n => (Number(n||0)*100).toFixed(1)+'%';
+
+    // โหลด Chart.js อัตโนมัติถ้ายังไม่มี
+    function ensureChart(){
+      return new Promise((resolve, reject)=>{
+        if (window.Chart) return resolve();
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js';
+        s.onload = resolve;
+        s.onerror = ()=>reject(new Error('โหลด Chart.js ไม่สำเร็จ'));
+        document.head.appendChild(s);
+      });
+    }
+
+    async function renderInvestorViz(data){
+      const wrap    = document.getElementById('investorViz');
+      const canvas  = document.getElementById('profitPie');
+      const ctx     = canvas.getContext('2d');
       const elRooms = document.getElementById('sumRooms');
       const elAvg   = document.getElementById('sumAvgRoi');
       const elProf  = document.getElementById('sumProfit');
-      const lossNote = document.getElementById('lossNote');
+      const lossNote= document.getElementById('lossNote');
 
-      const items = Array.isArray(data?.investments) ? data.investments : [];
-      const labels = items.map(x=>x.label || 'Room');
-      const profits = items.map(x=>Number(x.profit||0));
+      wrap.hidden = true;
+      await ensureChart();
+
+      const items    = Array.isArray(data?.investments) ? data.investments : [];
+      if (!items.length){
+        elRooms.textContent = 'Invested Rooms: 0';
+        elAvg.textContent   = 'Average ROI: –';
+        elProf.textContent  = 'Total Profit: –';
+        if (profitChart) { profitChart.destroy(); profitChart = null; }
+        wrap.hidden = false; return;
+      }
+
+      const labels   = items.map(x=>x.label || 'Room');
+      const profits  = items.map(x=>Number(x.profit||0));
       const invested = items.map(x=>Number(x.invested||0));
-      const rois = items.map((x,i)=>{
-        if (typeof x.roi === 'number') return x.roi;
-        return invested[i] > 0 ? profits[i]/invested[i] : 0;
-      });
+      const rois     = items.map((x,i)=> typeof x.roi === 'number' ? x.roi : (invested[i]>0 ? profits[i]/invested[i] : 0));
 
-      const hasLoss = profits.some(p => p < 0);
-      const pieData = profits.map(p => Math.max(p, 0)); // pie ไม่รับค่าติดลบ
+      const hasLoss  = profits.some(p => p < 0);
+      const pieData  = profits.map(p => Math.max(p, 0)); // pie ไม่รับลบ
 
       const totalProfit = profits.reduce((a,b)=>a+b,0);
       const totalInvest = invested.reduce((a,b)=>a+b,0);
       const avgROI = totalInvest>0
-        ? (profits.reduce((a,b,i)=>a + (invested[i]||0)*rois[i],0) / totalInvest)
+        ? (profits.reduce((a,b,i)=>a+(invested[i]||0)*rois[i],0)/totalInvest)
         : (rois.length ? rois.reduce((a,b)=>a+b,0)/rois.length : 0);
 
       elRooms.textContent = `Invested Rooms: ${items.length}`;
@@ -293,16 +311,13 @@
         options: {
           plugins: {
             legend: { position: 'bottom' },
-            tooltip: {
-              callbacks: {
-                label: (tt) => {
-                  const p = profits[tt.dataIndex];
-                  const sign = p<0 ? '−' : '';
-                  const val = Math.abs(p);
-                  return `${tt.label}: ${sign}${fmt(val)} THB`;
-                }
+            tooltip: { callbacks: {
+              label: (tt)=>{
+                const p = profits[tt.dataIndex];
+                const sign = p<0 ? '−' : '';
+                return `${tt.label}: ${sign}${fmt(Math.abs(p))} THB`;
               }
-            }
+            }}
           }
         }
       });
@@ -332,7 +347,7 @@
         kpiRightDesc.textContent = c.kpiRightDesc || '';
         detailsText.innerHTML = c.detailsText || '';
 
-        // Developer: เรนเดอร์แถบช่วง
+        // Developer
         const devBlock = document.getElementById('devBench');
         const marketMount = document.getElementById('devMarketMount');
         const ownerMount  = document.getElementById('devOwnerMount');
@@ -351,11 +366,11 @@
           devBlock.hidden = true;
         }
 
-        // Investor: วาด Pie + Summary
+        // Investor
         const investorViz = document.getElementById('investorViz');
         if (lens === 'investor') {
           investorViz.hidden = true;
-          renderInvestorViz(c);
+          await renderInvestorViz(c);
         } else {
           investorViz.hidden = true;
         }
@@ -375,16 +390,10 @@
     const lensBar = document.querySelector('.lens-bar');
     document.querySelector('[data-action="get-started"]')
       ?.addEventListener('click', ()=> lensBar?.scrollIntoView({behavior:'smooth', block:'center'}));
-    document.querySelector('[data-action="insights"]')
-      ?.addEventListener('click', ()=> alert('พื้นที่ “บทวิเคราะห์” (placeholder)'));
-    document.querySelector('[data-action="legal"]')
-      ?.addEventListener('click', ()=> alert('พื้นที่ “ข้อกฎหมายที่ควรทราบ” (placeholder)'));
-    document.querySelector('[data-action="contact"]')
-      ?.addEventListener('click', ()=> window.open('mailto:hello@propdecoded.example','_blank'));
 
-    // เริ่มด้วยเลนส์เดิม (หรือผู้เช่า)
+    // เริ่มด้วยเลนส์เดิมหรือผู้เช่า
     applyLens(localStorage.getItem('pd_lens') || 'tenant');
-    });
+      });
   </script>
 </body>
 </html>

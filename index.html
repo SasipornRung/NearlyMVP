@@ -13,7 +13,7 @@
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-  <!-- Chart.js (เผื่อโหลดทัน) -->
+  <!-- Chart.js (ใช้ในเลนส์นักลงทุน; ไม่แตะ) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
   <style>
@@ -50,7 +50,10 @@
     .main{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;align-items:start}
     @media(max-width:920px){.main{grid-template-columns:1fr}}
 
-    #map{height:56vh;min-height:320px;border-radius:16px;box-shadow:var(--shadow)}
+    /* ฝั่งซ้าย ใช้ขนาดเดียวกันทั้ง map และ dev preview */
+    #map, #devPreview{
+      height:56vh; min-height:320px; border-radius:16px; box-shadow:var(--shadow)
+    }
 
     .insight{background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:16px 16px 10px}
     .badge{display:inline-block;background:#BFE3D2;color:#1F6F63;padding:6px 10px;border-radius:999px;font-weight:700;font-size:13px;margin-right:6px}
@@ -127,12 +130,19 @@
 
     <!-- เนื้อหาหลัก -->
     <section class="main">
+      <!-- DEV Preview (ซ่อนไว้ก่อน) -->
+      <div id="devPreview" hidden style="display:grid;place-items:center;background:#fff">
+        <img id="devPreviewImg" src="" alt="Developer Demo"
+             style="max-width:100%;max-height:100%;object-fit:contain;border-radius:12px">
+      </div>
+
+      <!-- แผนที่ -->
       <div id="map" aria-label="แผนที่"></div>
 
       <aside class="insight">
         <span class="badge" id="lensTag">ผู้เช่า</span>
         <h3 id="areaTitle">วัฒนา</h3>
-        <div class="muted" id="subtitle">ภาพรวมสำหรับผู้อยู่อาศัย</div>
+        <div class="muted" id="subtitle">ภาพรวมสำหรับผู้อาศัย</div>
 
         <div style="margin:12px 0 6px;font-weight:800">ตัวชี้วัดหลัก</div>
         <div class="meter"><span id="meterFill" style="width:60%"></span></div>
@@ -153,7 +163,7 @@
           <div id="devOwnerMount" style="margin-top:12px"></div>
         </section>
 
-        <!-- Investor Portfolio -->
+        <!-- Investor Portfolio (ฝั่งนักลงทุน: ไม่แตะ) -->
         <section id="investorViz" hidden style="margin-top:12px">
           <div class="badge">Investor Portfolio</div>
           <div class="inv-grid">
@@ -176,7 +186,6 @@
   </div>
 
   <script>
-  // ให้ทุกอย่างรันหลังหน้าโหลดเสร็จ
   window.addEventListener('load', () => {
     /* ---------- Map ---------- */
     const map = L.map('map').setView([13.736717, 100.523186], 13);
@@ -186,15 +195,14 @@
     [[13.7307,100.5402,'Condo A'], [13.7425,100.5167,'Condo B'], [13.7253,100.5101,'Condo C']]
       .forEach(([lat,lng,label]) => L.marker([lat,lng]).addTo(map).bindPopup(label));
 
-    /* ---------- Load JSON (กันแคช) ---------- */
+    /* ---------- Load JSON (กันแคช) — ใช้พาธแบบ relative ---------- */
     async function loadLens(lens){
       const url = `./${lens}.json?v=${Date.now()}`;
       const res = await fetch(url, {cache:'no-store'});
       if(!res.ok) throw new Error('load json error: '+lens);
       return res.json();
     }
-
-    /* ---------- Elements ---------- */
+/* ---------- Elements ---------- */
     const lensBtns = {
       tenant:   document.getElementById('lens-tenant'),
       investor: document.getElementById('lens-investor'),
@@ -207,6 +215,25 @@
     const kpiRightTitle = document.getElementById('kpiRightTitle');
     const kpiRightDesc  = document.getElementById('kpiRightDesc');
     const detailsText   = document.getElementById('detailsText');
+
+    /* --- สำหรับสลับ Map ↔ Dev Preview (เฉพาะเลนส์รีโนเวท/ดีเวลอป) --- */
+    const mapEl = document.getElementById('map');
+    const devPreview = document.getElementById('devPreview');
+    const devPreviewImg = document.getElementById('devPreviewImg');
+    if (devPreviewImg) {
+      devPreviewImg.src = 'assets/dev-dashboard.png?v=1';
+      devPreviewImg.onerror = () => {
+        devPreview.innerHTML = `
+          <div style="padding:16px;text-align:center;color:#6A7D80">
+            ❗️ไม่พบรูปเดโม่: <code>assets/dev-dashboard.png</code><br>
+            กรุณาอัปโหลดไฟล์ภาพนี้เข้าสู่โฟลเดอร์ <b>assets</b>
+          </div>`;
+      };
+    }
+    const toggleDevPreview = (show) => {
+      if (mapEl) mapEl.hidden = !!show;
+      if (devPreview) devPreview.hidden = !show;
+    };
 
     /* ---------- Helpers ---------- */
     const fmt = n => Number(n).toLocaleString('th-TH',{maximumFractionDigits:0});
@@ -248,11 +275,9 @@
       position(); window.addEventListener('resize', position);
     }
 
-    /* ---------- Investor pie (robust) ---------- */
+    /* ---------- Investor pie (ฝั่งนักลงทุน: ไม่แตะ) ---------- */
     let profitChart = null;
     const pct = n => (Number(n||0)*100).toFixed(1)+'%';
-
-    // โหลด Chart.js อัตโนมัติถ้ายังไม่มี
     function ensureChart(){
       return new Promise((resolve, reject)=>{
         if (window.Chart) return resolve();
@@ -263,7 +288,6 @@
         document.head.appendChild(s);
       });
     }
-
     async function renderInvestorViz(data){
       const wrap    = document.getElementById('investorViz');
       const canvas  = document.getElementById('profitPie');
@@ -323,7 +347,7 @@
       });
 
       wrap.hidden = false;
-    }
+       }
 
     /* ---------- Apply lens ---------- */
     async function applyLens(lens){
@@ -332,6 +356,9 @@
         btn.classList.toggle('active', id===lens);
         btn.setAttribute('aria-selected', id===lens ? 'true' : 'false');
       });
+
+      /* เฉพาะเลนส์รีโนเวท/ดีเวลอป: ซ่อนแผนที่ โชว์ภาพเดโม่ */
+      toggleDevPreview(lens === 'renovator');
 
       // สถานะโหลด
       subtitle.textContent = 'กำลังโหลด…';
@@ -347,7 +374,7 @@
         kpiRightDesc.textContent = c.kpiRightDesc || '';
         detailsText.innerHTML = c.detailsText || '';
 
-        // Developer
+        // Developer Benchmarks (ยังแสดงตามเดิมเมื่ออยู่เลนส์รีโนเวท)
         const devBlock = document.getElementById('devBench');
         const marketMount = document.getElementById('devMarketMount');
         const ownerMount  = document.getElementById('devOwnerMount');
@@ -366,7 +393,7 @@
           devBlock.hidden = true;
         }
 
-        // Investor
+        // ฝั่งนักลงทุน: ไม่แตะ
         const investorViz = document.getElementById('investorViz');
         if (lens === 'investor') {
           investorViz.hidden = true;
@@ -393,7 +420,9 @@
 
     // เริ่มด้วยเลนส์เดิมหรือผู้เช่า
     applyLens(localStorage.getItem('pd_lens') || 'tenant');
-      });
+
+  });
   </script>
 </body>
 </html>
+  
